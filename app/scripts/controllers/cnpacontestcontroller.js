@@ -52,8 +52,9 @@ angular.module('cnpaContestApp')
             }
         }
 
-        function selectContest() {
-            $http.get('/contest?rootFolder=' + $scope.contest.rootFolder + "&name=" + $scope.contest.name, {
+        function selectContest(childScope) {
+            $scope.contest.name = childScope.contest.name;
+            $http.get('/contest?rootFolder=' + childScope.contest.rootFolder + "&name=" + childScope.contest.name, {
                 "Content-Type": "application/json"
             }).then(
                 selectContestResult,
