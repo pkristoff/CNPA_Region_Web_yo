@@ -1,0 +1,29 @@
+<h2>Choose Contest</h2>
+
+<div>Root Folder: {{contest.rootFolder}}</div>
+<div>
+    <label for="selectContest-id" > Choose existing contest</label>
+    <span>
+        <select id="selectContest-id" ng-model="contest" name="contest" ng-options="contest.name for contest in contests"></select>
+    </span>
+    <button type="button" id="selectContestBtn-id" data-loading-text="Getting..." class="btn btn-primary"
+            ng-click="selectContest()">
+        Select contest
+    </button>
+</div>
+<div>
+    <label for="createContest-id" > Create new contest</label>
+    <span>
+        <input id="createContest-id" type="text" ng-model="contest.name" name="name"/>
+    </span>
+    <button type="button" id="createContestBtn-id" data-loading-text="Getting..." class="btn btn-primary"
+            ng-click="createContest()">
+        Create contest
+    </button>
+</div>
+
+<div ng-if="contest.errorMessages" class="text-error error-msg">
+    <div ng-repeat = "errorMessage in contest.errorMessages">
+        {{errorMessage}}
+    </div>
+</div>
