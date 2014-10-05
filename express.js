@@ -35,7 +35,7 @@
                 throw err;
             else {
                 exif.metadata(data, callback)
-            };
+            }
         });
 
     };
@@ -55,56 +55,13 @@
     app.get('/contest', function (req, res) {
         var rootFolder = req.query.rootFolder;
         var contestName = req.query.name;
-        var dirPath = rootFolder + "/" + contestName;
+        var dirPath = rootFolder + "/" + contestName + "/";
         console.log("dirPath: " + dirPath);
         try {
             if (fs.existsSync(dirPath)) {
                 var contestContent = fs.readdirSync(dirPath);
-                var filenames = [];
-                var nonFilenames = [];
-                console.log("files: " + contestContent);
-                contestContent.forEach(function (filename) {
-                    var filenameSplit = filename.split(".");
-                    if (filenameSplit.length === 2 && (filenameSplit[1] === "jpg" || filenameSplit[1] === "JPG" || filenameSplit[1] === "jpeg" || filenameSplit[1] === "JPEG")) {
-                        var filePath = dirPath + "/" + filename;
-                        var fsStats = fs.statSync(filePath);
-                        if (fsStats.isFile()) {
-                            try {
-                                getExifMetadata(filePath, function (err, metadata) {
-                                    if (err) {
-                                        nonFilenames.push(err);
-                                    } else {
-                                        //-imagesize -iptc:CopyrightNotice -iptc:caption-abstract -xmp:title -DateTimeOriginal -FileSize
-//                                        console.log(metadata);
-                                        filenames.push({
-                                            filename: filename,
-                                            imageWidth: metadata.imageWidth,
-                                            imageHeight: metadata.imageHeight,
-                                            copyrightNotice: metadata.copyrightNotice,
-                                            dateCreated: metadata['date/timeCreated'],
-                                            fileSize: fsStats.size
-                                        });
-                                    }
-                                });
-                            } catch (ex){
-                                console.log("done ex: " + ex.message);
-                                console.log("done ex: " + ex.stack);
+                getAndReturnFileInfo(contestContent, dirPath, res);
 
-                            }
-                        }
-                    } else {
-                        nonFilenames.push(filename);
-                    }
-                });
-
-                setTimeout(xxx(filenames, nonFilenames, contestContent.length, res), 500);
-
-//                while (filenames.length + nonFilenames.length < contestContent.length){
-//                    console.log(filenames.length + ":" + nonFilenames.length);
-//                    setTimeout(function(){console.log("timeout finished");}, 3000);
-//                    // do nothing just waiting for ajax calls to finish.
-//                }
-//                res.status(200).send(filenames);
             } else {
                 res.status(500).send("could not find path: " + dirPath);
             }
@@ -113,6 +70,48 @@
             res.status(500).send("could not find path: " + dirPath + ": " + exc.message);
         }
     });
+
+    function getAndReturnFileInfo(contestContent, dirPath, res){
+
+        var filenames = [];
+        var nonFilenames = [];
+        console.log("files: " + contestContent);
+        contestContent.forEach(function (filename) {
+            var filenameSplit = filename.split(".");
+            if (filenameSplit.length === 2 && (filenameSplit[1] === "jpg" || filenameSplit[1] === "JPG" || filenameSplit[1] === "jpeg" || filenameSplit[1] === "JPEG")) {
+                var filePath = dirPath + filename;
+                var fsStats = fs.statSync(filePath);
+                if (fsStats.isFile()) {
+                    try {
+                        getExifMetadata(filePath, function (err, metadata) {
+                            if (err) {
+                                nonFilenames.push(err);
+                            } else {
+                                //-imagesize -iptc:CopyrightNotice -iptc:caption-abstract -xmp:title -DateTimeOriginal -FileSize
+//                                        console.log(metadata);
+                                filenames.push({
+                                    filename: filename,
+                                    imageWidth: metadata.imageWidth,
+                                    imageHeight: metadata.imageHeight,
+                                    copyrightNotice: metadata.copyrightNotice,
+                                    dateCreated: metadata['date/timeCreated'],
+                                    fileSize: fsStats.size
+                                });
+                            }
+                        });
+                    } catch (ex){
+                        console.log("done ex: " + ex.message);
+                        console.log("done ex: " + ex.stack);
+
+                    }
+                }
+            } else {
+                nonFilenames.push(filename);
+            }
+        });
+
+        setTimeout(xxx(filenames, nonFilenames, contestContent.length, res), 500);
+    }
 
     app.get('*', function (req, res) {
 //    console.log("*: " + req.originalUrl);
@@ -123,7 +122,7 @@
         var form = new formidable.IncomingForm(),
             rootFolder, contestName,
             files = [],
-            fields = [];
+            filenames = [];
         form.uploadDir = __dirname + '/uploads';
         form.on('field', function(field, value) {
             if (field === "rootFolder"){
@@ -142,9 +141,10 @@
             files.forEach(function (entry){
                 var file = entry[1];
                 var fn = file.name;
+                filenames.push(fn);
                 fs.renameSync(file.path, dirPath + fn);
             });
-            res.status(200).send("done");
+            getAndReturnFileInfo(filenames, dirPath, res);
         });
         form.parse(req);
     });
@@ -153,20 +153,20 @@
         var rootFolder = req.body.rootFolder;
         try {
             if (!fs.existsSync(rootFolder)) {
-                res.status(500).send("Root folder does not exist")
+                fs.mkdir(rootFolder);
             }
             var rootFolderContent = fs.readdirSync(rootFolder);
             res.status(200).send(rootFolderContent);
 
         } catch (exc) {
-            res.status(500).send("could not create newDir: " + newDir + ": " + exc.message);
+            res.status(500).send("could not read contents from rootFolder: " + rootFolder + ": " + exc.message);
         }
     });
 
     app.post('/createContest', function (req, res) {
         var rootFolder = req.body.rootFolder;
         var contestName = req.body.name;
-        var dirPath = rootFolder + "/" + contestName + "/*.jpg";
+        var dirPath = rootFolder + "/" + contestName + "/";
         var contestContent;
         try {
             if (fs.existsSync(dirPath)) {
