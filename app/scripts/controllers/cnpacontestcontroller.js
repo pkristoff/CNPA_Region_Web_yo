@@ -8,9 +8,12 @@
  * Controller of the cnpaContestApp
  */
 angular.module('cnpaContestApp')
-    .controller('CnpaContestController', ['$scope', '$http', '$location', function ($scope, $http, $location) {
+    .controller('CnpaContestController', ['$scope', '$http', '$location', 'fileImageService',
+        function ($scope, $http, $location, fileImageService) {
+        $scope.scopeName = 'CnpaContestController';
         if ($scope.contest == undefined) {
-            $scope.contest = {rootFolder: '/tmp/cnpa',
+            $scope.contest = {
+                rootFolder: '/tmp/cnpa',
                 name: 'bbb'
             };
         }
@@ -45,16 +48,15 @@ angular.module('cnpaContestApp')
 
         function createContestResult (response) {
             if (response.status === 200) {
-                updateFiles(response);
+                $scope.contest.files = fileImageService.updateFiles(response.data);
                 $location.path("/contestFiles");
             } else {
                 errorCallback($scope)(response);
             }
         }
 
-        function selectContest(childScope) {
-            $scope.contest.name = childScope.contest.name;
-            $http.get('/contest?rootFolder=' + childScope.contest.rootFolder + "&name=" + childScope.contest.name, {
+        function selectContest() {
+            $http.get('/contest?rootFolder=' + $scope.contest.rootFolder + "&name=" + $scope.contest.name, {
                 "Content-Type": "application/json"
             }).then(
                 selectContestResult,
@@ -65,16 +67,98 @@ angular.module('cnpaContestApp')
         function selectContestResult(response){
 
             if (response.status === 200) {
-                updateFiles(response);
+                $scope.contest.files = fileImageService.updateFiles(response.data);
                 $location.path("/contestFiles");
             } else {
                 errorCallback($scope)(response);
             }
         }
 
-        function updateFiles(response) {
+        function errorCallback($scope) {
+            return function (response) {
+                console.log("error " + response.status + ": " + response.data);
+                $scope.errorMessages = [response.data];
+            }
+        }
+
+//        $scope.uploadFile = uploadFile;
+        $scope.selectContest = selectContest;
+        $scope.createContest = createContest;
+        $scope.getContests = getContests;
+
+//        $scope._updateFiles = updateFiles;
+        $scope._errorCallback = errorCallback;
+        $scope._getContestsResult = getContestsResult;
+        $scope._createContestResult = createContestResult;
+        $scope._selectContestResult = selectContestResult;
+
+    }])
+    .directive('images', ['$http', 'fileImageService', function($http, fileImageService) {
+        return {
+            restrict: 'E',
+            scope: {
+                images: '=files',
+                contestName: '=',
+                folder: '='
+            },
+            templateUrl: 'views/fileList.html',
+            link: function (scope){
+                scope.scopeName = 'images';
+
+
+                scope.uploadFile = function (files)
+                {
+                    var fd = new FormData();
+                    //Take the first selected file
+                    for (var i = 0, len = files.length; i < len; i++) {
+                        fd.append("file", files.item(i));
+                    }
+                    fd.append('rootFolder', scope.folder);
+                    fd.append('name', scope.contestName);
+
+                    $http.post('/addFiles', fd, {
+                        withCredentials: true,
+                        headers: {'Content-Type': undefined },
+                        transformRequest: angular.identity
+                    }).then(function (response) {
+//                $scope.$apply(function () {
+                        scope.images = scope.images.concat(fileImageService.updateFiles(response.data));
+//                });
+//                $scope.$broadcast("REFRESH");
+//                $location.path("/contestFiles");
+
+                    });
+
+                }
+            }
+        };
+    }]).service('fileImageService', [function(){
+
+
+        function isFileAgeValid(date) {
+            return !!date; // age is within limits.
+        }
+
+        function isCopyrightValid(copyrightNotice) {
+            return !!copyrightNotice && (copyrightNotice.indexOf("©") >= 0);
+        }
+
+        function isDimensionValid(dim) {
+            return dim <= 1024;
+        }
+
+        function isFilenameValid(filename) {
+            var xxx = filename.split("-");
+            return xxx.length == 2 && xxx[0].length > 0 && xxx[1].length > 0;
+        }
+
+        function isFileSizeValid(fileSize) {
+            return ((fileSize / 1024) <= 300);
+        }
+
+        function updateFiles(rawFiles) {
             var files = [];
-            response.data.forEach(function (fileEntry) {
+            rawFiles.forEach(function (fileEntry) {
                 var fn = fileEntry.filename;
                 var fnSplit  = fn.split("-");
                 var newEntry = {
@@ -121,104 +205,16 @@ angular.module('cnpaContestApp')
                 };
                 files.push(newEntry);
             });
-            $scope.contest.files = files;
+            return files;
         }
 
-        function errorCallback($scope) {
-            return function (response) {
-                console.log("error " + response.status + ": " + response.data);
-                $scope.errorMessages = [response.data];
-            }
+        return {
+            updateFiles : updateFiles,
+            // testing only
+            _isFileSizeValid : isFileSizeValid,
+        _isFilenameValid : isFilenameValid,
+        _isDimensionValid : isDimensionValid,
+        _isCopyrightValid : isCopyrightValid,
+        _isFileAgeValid : isFileAgeValid
         }
-
-        function isFileAgeValid(date) {
-            return !!date; // age is within limits.
-        }
-
-        function isCopyrightValid(copyrightNotice) {
-            return !!copyrightNotice && (copyrightNotice.indexOf("\\184") >= 0);
-        }
-
-        function isDimensionValid(dim) {
-            return dim <= 1024;
-        }
-
-        function isFilenameValid(filename) {
-            var xxx = filename.split("-");
-            return xxx.length == 2 && xxx[0].length > 0 && xxx[1].length > 0;
-        }
-
-        function isFileSizeValid(fileSize) {
-            return ((fileSize / 1024) <= 300);
-        }
-
-        function uploadFile(files) {
-            var fd = new FormData();
-            //Take the first selected file
-            fd.append("file", files[0]);
-            fd.append('rootFolder', $scope.contest.rootFolder);
-            fd.append('name', $scope.contest.name);
-
-            $http.post('/addFiles', fd, {
-                withCredentials: true,
-                headers: {'Content-Type': undefined },
-                transformRequest: angular.identity
-            }).then(function (response) {
-                $location.path("/selectContest");
-
-            });
-
-        }
-
-        function onFileSelect($files) {
-            //$files: an array of files selected, each file has name, size, and type.
-            for (var i = 0; i < $files.length; i++) {
-                var file = $files[i];
-                $scope.upload = $upload.upload({
-                    url: '/addFiles', //upload.php script, node.js route, or servlet url
-                    //method: 'POST' or 'PUT',
-                    //headers: {'header-key': 'header-value'},
-                    //withCredentials: true,
-                    data: {myObj: $scope.myModelObj},
-                    file: file // or list of files ($files) for html5 only
-                    //fileName: 'doc.jpg' or ['1.jpg', '2.jpg', ...] // to modify the name of the file(s)
-                    // customize file formData name ('Content-Disposition'), server side file variable name.
-                    //fileFormDataName: myFile, //or a list of names for multiple files (html5). Default is 'file'
-                    // customize how data is added to formData. See #40#issuecomment-28612000 for sample code
-                    //formDataAppender: function(formData, key, val){}
-                }).progress(function (evt) {
-                    console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
-                }).success(function (data, status, headers, config) {
-                    // file is uploaded successfully
-                    console.log(data);
-                });
-                //.error(...)
-                //.then(success, error, progress);
-                // access or attach event listeners to the underlying XMLHttpRequest.
-                //.xhr(function(xhr){xhr.upload.addEventListener(...)})
-            }
-            /* alternative way of uploading, send the file binary with the file's content-type.
-             Could be used to upload files to CouchDB, imgur, etc... html5 FileReader is needed.
-             It could also be used to monitor the progress of a normal http post/put request with large data*/
-            // $scope.upload = $upload.http({...})  see 88#issuecomment-31366487 for sample code.
-        }
-
-        $scope.onFileSelect = onFileSelect;
-        $scope.uploadFile = uploadFile;
-        $scope.selectContest = selectContest;
-        $scope.createContest = createContest;
-        $scope.getContests = getContests;
-
-        // testing only
-        $scope._isFileSizeValid = isFileSizeValid;
-        $scope._isFilenameValid = isFilenameValid;
-        $scope._isDimensionValid = isDimensionValid;
-        $scope._isCopyrightValid = isCopyrightValid;
-        $scope._isFileAgeValid = isFileAgeValid;
-        $scope._updateFiles = updateFiles;
-        $scope._errorCallback = errorCallback;
-        $scope._getContestsResult = getContestsResult;
-        $scope._createContestResult = createContestResult;
-        $scope._selectContestResult = selectContestResult;
-
     }]);

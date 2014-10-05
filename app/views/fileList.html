@@ -1,0 +1,23 @@
+
+<div class="panel-body">
+    <input type="file" name="file" multiple onchange="angular.element(this).scope().uploadFile(this.files)"/>
+    <table class="table" >
+        <thead>
+        <tr>
+            <th>File</th><th>Name</th><th>Tltle</th><th>Width</th><th>Height</th><th>Copyright</th><th>Created</th><th>size(k)</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat="file in images">
+            <td title="{{file.filename.title}}">{{file.filename.value}}</td>
+            <td class="{{file.contestantName.valid ? '' : 'alert alert-danger'}}" title="{{file.contestantName.title}}">{{file.contestantName.value}}</td>
+            <td class="{{file.title.valid ? '' : 'alert alert-danger'}}" title="{{file.title.title}}">{{file.title.value}}</td>
+            <td class="{{file.imageWidth.valid ? '' : 'alert alert-danger'}}" title="{{file.imageWidth.title}}">{{file.imageWidth.value}}</td>
+            <td class="{{file.imageHeight.valid ? '' : 'alert alert-danger'}}" title="{{file.imageHeight.title}}">{{file.imageHeight.value}}</td>
+            <td class="{{file.copyrightNotice.valid ? '' : 'alert alert-danger'}}" title="{{file.copyrightNotice.title}}">{{file.copyrightNotice.value}}</td>
+            <td class="{{file.dateCreated.valid ? '' : 'alert alert-danger'}}" title="{{file.dateCreated.title}}">{{file.dateCreated.value}}</td>
+            <td class="{{file.fileSize.valid ? '' : 'alert alert-danger'}}" title="{{file.fileSize.title}}">{{file.fileSize.value}}</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
