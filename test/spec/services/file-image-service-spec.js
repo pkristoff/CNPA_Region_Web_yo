@@ -83,7 +83,7 @@ describe('Service: fileImageService', function () {
 
     describe('updateFiles', function(){
 
-        var updateFiles, updateFilesResponse;
+        var updateFiles, updateFilesResponse, updateFilesResponses;
 
         beforeEach(inject(function (fileImageService) {
             updateFiles = fileImageService.updateFiles;
@@ -95,9 +95,38 @@ describe('Service: fileImageService', function () {
                 copyrightNotice : "'©' 2013 Paul Kristoff",
                 dateCreated : "December 25, 2013"
             }];
+            updateFilesResponses = [{
+                filename : "zzz - yyy1",
+                fileSize : 299*1024,
+                imageWidth : 1024,
+                imageHeight : 1023,
+                copyrightNotice : "'©' 2013 Paul Kristoff",
+                dateCreated : "December 25, 2013"
+            },{
+                filename : "yyy - yyy2",
+                fileSize : 299*1024,
+                imageWidth : 1024,
+                imageHeight : 1023,
+                copyrightNotice : "'©' 2013 Paul Kristoff",
+                dateCreated : "December 25, 2013"
+            },{
+                filename : "xxx - yyy3",
+                fileSize : 299*1024,
+                imageWidth : 1024,
+                imageHeight : 1023,
+                copyrightNotice : "'©' 2013 Paul Kristoff",
+                dateCreated : "December 25, 2013"
+            }];
         }));
 
         describe('updateFiles', function () {
+            it('should create an entry per file', function () {
+                var files = updateFiles(updateFilesResponses);
+                expect(files[0].title.value).toBe("yyy3")
+                expect(files[1].title.value).toBe("yyy2")
+                expect(files[2].title.value).toBe("yyy1")
+            });
+
             it('should create an entry per file', function () {
                 var files = updateFiles(updateFilesResponse);
                 expect(files[0].filename.value).toBe("xxx - yyy");
@@ -132,6 +161,9 @@ describe('Service: fileImageService', function () {
                 expect(files[0].dateCreated.title).toBe("December 25, 2013");
                 expect(files[0].dateCreated.valid).toBe(true);
             });
+            it('should sort the files alphabetically by filename', function () {
+
+            })
         });
     });
 

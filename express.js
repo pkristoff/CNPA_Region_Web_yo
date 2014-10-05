@@ -55,7 +55,7 @@
     app.get('/contest', function (req, res) {
         var rootFolder = req.query.rootFolder;
         var contestName = req.query.name;
-        var dirPath = rootFolder + "/" + contestName + "/";
+        var dirPath = rootFolder + "/" + contestName + "/Originals/";
         console.log("dirPath: " + dirPath);
         try {
             if (fs.existsSync(dirPath)) {
@@ -137,7 +137,7 @@
         });
         form.on('end', function() {
             console.log('done');
-            var dirPath = rootFolder + "/" + contestName + "/";
+            var dirPath = rootFolder + "/" + contestName + "/Originals/";
             files.forEach(function (entry){
                 var file = entry[1];
                 var fn = file.name;
@@ -170,8 +170,16 @@
         var contestContent;
         try {
             if (fs.existsSync(dirPath)) {
-                contestContent = fs.readdirSync(dirPath);
+                dirPath = dirPath + "Originals/";
+                if (fs.existsSync(dirPath)){
+                    contestContent = fs.readdirSync(dirPath);
+                } else{
+                    fs.mkdirSync(dirPath);
+                    contestContent = [];
+                }
             } else {
+                fs.mkdirSync(dirPath);
+                dirPath = dirPath + "Originals/";
                 fs.mkdirSync(dirPath);
                 contestContent = [];
             }
