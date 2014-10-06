@@ -137,17 +137,41 @@
         });
         form.on('end', function() {
             console.log('done');
-            var dirPath = rootFolder + "/" + contestName + "/Originals/";
+            var dirPath = rootFolder + "/" + contestName + "/";
+            var dirPathOriginals = dirPath + "Originals/";
+            var dirPathTestdata = dirPath + "Testdata/";
             files.forEach(function (entry){
                 var file = entry[1];
                 var fn = file.name;
                 filenames.push(fn);
-                fs.renameSync(file.path, dirPath + fn);
+                fs.renameSync(file.path, dirPathOriginals + fn);
+                fs.writeFileSync(dirPathTestdata + fn, fs.readFileSync(dirPathOriginals + fn));
             });
-            getAndReturnFileInfo(filenames, dirPath, res);
+            getAndReturnFileInfo(filenames, dirPathTestdata, res);
         });
         form.parse(req);
     });
+
+//    app.post('/deleteFiles', function (req, res) {
+//        var rootFolder = req.body.rootFolder;
+//        var contestName = req.body.name;
+//        var filenames = req.body.filenames;
+//        var dirPath = rootFolder + "/" + contestName + "/Originals/";
+//        try {
+//            if (!fs.existsSync(dirPath)) {
+//                res.status(500).send(dirPath + " does not exist");
+//            } else {
+//                filenames.forEach(function (filename){
+//                    fs.unlinkSync(dirPath+filename);
+//                })
+//            }
+//            var rootFolderContent = fs.readdirSync(rootFolder);
+//            res.status(200).send(rootFolderContent);
+//
+//        } catch (exc) {
+//            res.status(500).send("could not delete files: " + dirPath + ": " + filenames + ": " + exc.message);
+//        }
+//    });
 
     app.post('/getContests', function (req, res) {
         var rootFolder = req.body.rootFolder;
@@ -162,6 +186,45 @@
             res.status(500).send("could not read contents from rootFolder: " + rootFolder + ": " + exc.message);
         }
     });
+
+    app.post('/setTitle', function (req, res){
+
+
+        var dirPath = rootFolder + "/" + contestName + "/";
+
+
+
+
+        var spawn = require('child_process').spawn;
+
+
+
+        ls    = spawn('ls', ['-lh', '/usr']);
+
+        ls.stdout.on('data', function (data) {
+            console.log('stdout: ' + data);
+        });
+
+        ls.stderr.on('data', function (data) {
+            console.log('stderr: ' + data);
+        });
+
+        ls.on('close', function (code) {
+            console.log('child process exited with code ' + code);
+        });
+
+    });
+
+//            exiftool -imagesize -iptc:CopyrightNotice -iptc:caption-abstract -xmp:title -DateTimeOriginal -FileSize ./* > #{directory_info.exiftool_info_file}
+
+// date = @meta_data["Date/Time Original"]
+// year = (date.nil? or date.empty?) ? "2014" : date.split(":")[0]
+// copyright = "©#{year} #{@personName}"
+// #      puts "  copyright: #{copyright}"
+// xxx = "exiftool -iptc:CopyrightNotice=\"#{copyright}\" #{@tempFilename}"
+// #     puts "   copyright: '#{xxx}'"
+// system xxx
+
 
     app.post('/createContest', function (req, res) {
         var rootFolder = req.body.rootFolder;
@@ -179,8 +242,8 @@
                 }
             } else {
                 fs.mkdirSync(dirPath);
-                dirPath = dirPath + "Originals/";
-                fs.mkdirSync(dirPath);
+                fs.mkdirSync(dirPath + "Originals/");
+                fs.mkdirSync(dirPath + "Testdata/");
                 contestContent = [];
             }
             res.status(200).send(contestContent);
