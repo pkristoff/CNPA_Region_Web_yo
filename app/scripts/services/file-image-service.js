@@ -11,7 +11,9 @@ angular.module('cnpaContestApp')
         }
 
         function isCopyrightValid(copyrightNotice) {
-            return !!copyrightNotice && (copyrightNotice.indexOf("©") >= 0);
+            return !!copyrightNotice &&
+                (copyrightNotice.indexOf("©") >= 0  ||
+                    copyrightNotice.indexOf("Copyright") >= 0);
         }
 
         function isDimensionValid(dim) {

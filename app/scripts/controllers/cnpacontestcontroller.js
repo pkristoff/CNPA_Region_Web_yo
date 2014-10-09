@@ -83,12 +83,12 @@ angular.module('cnpaContestApp')
                 )
             }
 
-//        $scope.uploadFile = uploadFile;
+
+
             $scope.selectContest = selectContest;
             $scope.createContest = createContest;
             $scope.getContests = getContests;
 
-//        $scope._updateFiles = updateFiles;
             $scope._errorCallback = errorCallback;
             $scope._getContestsResult = getContestsResult;
             $scope._createContestResult = createContestResult;
