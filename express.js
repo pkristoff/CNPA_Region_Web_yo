@@ -32,7 +32,6 @@
     });
 
     var getExifMetadata = function (path, callback) {
-//console.log('filepath: ' + path);
 
         fs.readFile(path, function (err, data) {
             if (err)
@@ -44,35 +43,37 @@
 
     };
 
-    var xxx = function (filenames, nonFilenames, totalFiles, res) {
+    var xxx = function (result, nonFilenames, totalFiles, res) {
         return function () {
-            if (filenames.length + nonFilenames.length >= totalFiles) {
-//                console.log("finally done");
-                res.status(200).send(filenames);
+            if (result.filenames.length + nonFilenames.length >= totalFiles) {
+                res.status(200).send(result);
             } else {
-//                console.log("looping: " + filenames.length + ":" + nonFilenames.length + ":" + totalFiles);
-                setTimeout(xxx(filenames, nonFilenames, totalFiles, res), 500);
+                setTimeout(xxx(result, nonFilenames, totalFiles, res), 500);
             }
         }
     };
 
+    function getPath(rootFolder, contestName, directory){
+        return rootFolder + "/" + contestName + "/" + directory + "/";
+    }
+
     function getTestdataPath(rootFolder, contestName){
-        return rootFolder + "/" + contestName + "/" + Testdata + "/";
+        return getPath(rootFolder, contestName, Testdata);
     }
 
     function getOriginalsPath(rootFolder, contestName){
-        return rootFolder + "/" + contestName + "/" + Originals + "/";
+        return getPath(rootFolder, contestName, Originals);
     }
 
-    app.get('/contest', function (req, res) {
+    app.get('/directory', function (req, res) {
         var rootFolder = req.query.rootFolder;
         var contestName = req.query.name;
-        var dirPath = getTestdataPath(rootFolder, contestName);
-//        console.log("dirPath: " + dirPath);
+        var directory = req.query.directory;
+        var dirPath = getPath(rootFolder, contestName, directory);
         try {
             if (fs.existsSync(dirPath)) {
                 var contestContent = fs.readdirSync(dirPath);
-                getAndReturnFileInfo(contestContent, dirPath, res);
+                getAndReturnFileInfo(contestContent, dirPath, res, directory);
 
             } else {
                 res.status(500).send("could not find path: " + dirPath);
@@ -83,11 +84,32 @@
         }
     });
 
-    function getAndReturnFileInfo(contestContent, dirPath, res){
+    app.get('/contest', function (req, res) {
+        var rootFolder = req.query.rootFolder;
+        var contestName = req.query.name;
+        var dirPath = getTestdataPath(rootFolder, contestName);
+        try {
+            if (fs.existsSync(dirPath)) {
+                var contestContent = fs.readdirSync(dirPath);
+                getAndReturnFileInfo(contestContent, dirPath, res, Testdata);
 
-        var filenames = [];
+            } else {
+                res.status(500).send("could not find path: " + dirPath);
+            }
+
+        } catch (exc) {
+            res.status(500).send("could not find path: " + dirPath + ": " + exc.message);
+        }
+    });
+
+    function getAndReturnFileInfo(contestContent, dirPath, res, directory){
+
+        var result = {
+            filenames: [],
+            directories: [Originals, Testdata],
+            directory : directory
+        };
         var nonFilenames = [];
-//        console.log("files: " + contestContent);
         contestContent.forEach(function (filename) {
             var filenameSplit = filename.split(".");
             if (filenameSplit.length === 2 && (filenameSplit[1] === "jpg" || filenameSplit[1] === "JPG" || filenameSplit[1] === "jpeg" || filenameSplit[1] === "JPEG")) {
@@ -99,9 +121,7 @@
                             if (err) {
                                 nonFilenames.push(err);
                             } else {
-                                //-imagesize -iptc:CopyrightNotice -iptc:caption-abstract -xmp:title -DateTimeOriginal -FileSize
-//                                        console.log(metadata);
-                                filenames.push({
+                                result.filenames.push({
                                     filename: filename,
                                     imageWidth: metadata.imageWidth,
                                     imageHeight: metadata.imageHeight,
@@ -122,11 +142,10 @@
             }
         });
 
-        setTimeout(xxx(filenames, nonFilenames, contestContent.length, res), 500);
+        setTimeout(xxx(result, nonFilenames, contestContent.length, res), 500);
     }
 
     app.get('*', function (req, res) {
-//    console.log("*: " + req.originalUrl);
         res.redirect('/');
     });
 
@@ -144,12 +163,9 @@
             }
         });
         form.on('file', function(field, file) {
-//            console.log(file.name);
             files.push([field, file]);
         });
         form.on('end', function() {
-//            console.log('done');
-            var dirPath = rootFolder + "/" + contestName + "/";
             var dirPathOriginals = getOriginalsPath(rootFolder, contestName);
             var dirPathTestdata = getTestdataPath(rootFolder, contestName);
             files.forEach(function (entry){
@@ -159,7 +175,7 @@
                 fs.renameSync(file.path, dirPathOriginals + fn);
                 fs.writeFileSync(dirPathTestdata + fn, fs.readFileSync(dirPathOriginals + fn));
             });
-            getAndReturnFileInfo(filenames, dirPathTestdata, res);
+            getAndReturnFileInfo(filenames, dirPathTestdata, res, Testdata);
         });
         form.parse(req);
     });
@@ -212,7 +228,6 @@
         ls    = spawn('exiftool', ['-iptc:CopyrightNotice=\"' +  copyright + '\"', dirPath+filename]);
 
         ls.stdout.on('data', function (data) {
-//            console.log('stdout: ' + data);
         });
 
         ls.stderr.on('data', function (data) {
@@ -220,7 +235,6 @@
         });
 
         ls.on('close', function (code) {
-//            console.log('child process exited with code ' + code);
             if (error){
                 res.status(500).send(error);
             } else {

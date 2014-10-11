@@ -9,7 +9,9 @@ angular.module('cnpaContestApp')
             scope: {
                 images: '=',
                 contestName: '=',
-                folder: '='
+                folder: '=',
+                directories: '=',
+                directory: '='
             },
             templateUrl: 'views/fileList.html',
             link: function (scope) {
@@ -18,9 +20,31 @@ angular.module('cnpaContestApp')
                 function errorCallback($scope) {
                     return function (response) {
                         console.log("error " + response.status + ": " + response.data);
-                        $scope.errorMessages = [response.data];
+                        scope.errorMessages = [response.data];
                     }
                 }
+
+                // this is copied from CnpaContestController - need to merge
+                function contestResult(response) {
+                    if (response.status === 200) {
+                        var result = response.data;
+                        scope.images = fileImageService.updateFiles(result.filenames);
+                        scope.directory = result.directory;
+                        scope.directories = result.directories.map(function(dirName){
+                            return {value: dirName, text: dirName};
+                        });
+                        $location.path("/contestFiles");
+                    } else {
+                        errorCallback(scope)(response);
+                    }
+                }
+
+                scope.changeDirectory = function (select) {
+                    $http.get('/directory?rootFolder=' + scope.folder + '&name=' + scope.contestName
+                        + '&directory=' + select[select.value].text, {
+                        "Content-Type": 'application/json'
+                    }).then(contestResult, errorCallback(scope));
+                };
 
                 scope.setCopyright = function(fileInfo){
 

@@ -14,7 +14,9 @@ angular.module('cnpaContestApp')
             if ($scope.contest == undefined) {
                 $scope.contest = {
                     rootFolder: '/tmp/cnpa',
-                    name: 'bbb'
+                    name: 'bbb',
+                    contests: [], //{rootFolder: '', name: ''}
+                    directories: []  // name of directories
                 };
             }
 
@@ -27,9 +29,12 @@ angular.module('cnpaContestApp')
 
             function getContestsResult(response) {
                 if (response.status === 200) {
-                    $scope.contests = [];
-                    response.data.forEach(function (contestName) {
-                        $scope.contests.push({rootFolder: $scope.contest.rootFolder, name: contestName});
+                    $scope.contest.contests = [];
+                    response.data.forEach(function (contestName, index) {
+                        if (index === 0){  // select first contest by default
+                            $scope.contest.name = contestName;
+                        }
+                        $scope.contest.contests.push({rootFolder: $scope.contest.rootFolder, name: contestName});
                     });
                     $location.path("/chooseContest");
                     return(response.data);
@@ -46,9 +51,14 @@ angular.module('cnpaContestApp')
                 );
             }
 
-            function createContestResult(response) {
+            function contestResult(response) {
                 if (response.status === 200) {
-                    $scope.contest.files = fileImageService.updateFiles(response.data);
+                    var result = response.data;
+                    $scope.contest.files = fileImageService.updateFiles(result.filenames);
+                    $scope.contest.directory = result.directory;
+                    $scope.contest.directories = result.directories.map(function(dirName){
+                        return {value: dirName, text: dirName};
+                    });
                     $location.path("/contestFiles");
                 } else {
                     errorCallback($scope)(response);
@@ -58,19 +68,9 @@ angular.module('cnpaContestApp')
             function createContest() {
 
                 $http.post('/createContest', $scope.contest, {"Content-Type": "application/json"}).then(
-                    createContestResult,
+                    contestResult,
                     errorCallback($scope)
                 )
-            }
-
-            function selectContestResult(response) {
-
-                if (response.status === 200) {
-                    $scope.contest.files = fileImageService.updateFiles(response.data);
-                    $location.path("/contestFiles");
-                } else {
-                    errorCallback($scope)(response);
-                }
             }
 
             function selectContest() {
@@ -78,7 +78,7 @@ angular.module('cnpaContestApp')
                 $http.get('/contest?rootFolder=' + $scope.contest.rootFolder + "&name=" + $scope.contest.name, {
                     "Content-Type": "application/json"
                 }).then(
-                    selectContestResult,
+                    contestResult,
                     errorCallback($scope)
                 )
             }
@@ -91,7 +91,6 @@ angular.module('cnpaContestApp')
 
             $scope._errorCallback = errorCallback;
             $scope._getContestsResult = getContestsResult;
-            $scope._createContestResult = createContestResult;
-            $scope._selectContestResult = selectContestResult;
+            $scope._contestResult = contestResult;
 
     }]);

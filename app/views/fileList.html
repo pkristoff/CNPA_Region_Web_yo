@@ -1,7 +1,9 @@
 
 <div class="panel-body">
-    <input type="file" name="file" multiple onchange="angular.element(this).scope().uploadFile(this.files)"/>
-    funct: {{}}
+    <label>Add images</label><input type="file" name="file" multiple onchange="angular.element(this).scope().uploadFile(this.files)"/>
+    <label>Show Images For:</label>
+    <select ng-model="directory" ng-options="dir.value as dir.text for dir in directories" onchange="angular.element(this).scope().changeDirectory(this)"></select>
+
     <table class="table" >
         <thead>
         <tr>

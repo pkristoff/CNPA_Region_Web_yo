@@ -3,7 +3,7 @@
 <div>
     <label for="selectContest-id" > Choose existing contest</label>
     <span>
-        <select id="selectContest-id" ng-model="contest.name" name="contest" ng-options="contest.name as contest.name for contest in contests"></select>
+        <select id="selectContest-id" ng-model="contest.name" name="contest" ng-options="contest.name as contest.name for contest in contest.contests"></select>
     </span>
     <button type="button" id="selectContestBtn-id" data-loading-text="Getting..." class="btn btn-primary"
             ng-click="selectContest(this)">
