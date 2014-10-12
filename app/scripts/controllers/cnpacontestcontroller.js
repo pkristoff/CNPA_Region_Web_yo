@@ -14,7 +14,7 @@ angular.module('cnpaContestApp')
             if ($scope.contest == undefined) {
                 $scope.contest = {
                     rootFolder: '/tmp/cnpa',
-                    name: 'bbb',
+                    name: '',
                     contests: [], //{rootFolder: '', name: ''}
                     directories: []  // name of directories
                 };
@@ -22,7 +22,9 @@ angular.module('cnpaContestApp')
 
             function errorCallback($scope) {
                 return function (response) {
-                    console.log("error " + response.status + ": " + response.data);
+                    var message = "error " + response.status + ": " + response.data;
+                    console.log(message);
+                    alert(message);
                     $scope.errorMessages = [response.data];
                 }
             }
@@ -39,7 +41,7 @@ angular.module('cnpaContestApp')
                     $location.path("/chooseContest");
                     return(response.data);
                 } else {
-                    errorCallback(response);
+                    errorCallback($scope)(response);
                 }
             }
 
@@ -47,7 +49,7 @@ angular.module('cnpaContestApp')
 
                 $http.post('/getContests', $scope.contest, {"Content-Type": "application/json"}).then(
                     getContestsResult,
-                    errorCallback
+                    errorCallback($scope)
                 );
             }
 

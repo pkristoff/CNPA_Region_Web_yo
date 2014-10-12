@@ -46,6 +46,21 @@ angular.module('cnpaContestApp')
                     }).then(contestResult, errorCallback(scope));
                 };
 
+                scope.deleteFile = function(fileInfo){
+
+                    var params = {
+                        rootFolder : scope.folder,
+                        contestName : scope.contestName,
+                        filename : fileInfo.filename.value,
+                        directory : scope.directory
+                    };
+
+                    $http.post('/deleteFile', params, {"Content-Type": "application/json"}).then(
+                        contestResult,
+                        errorCallback(scope)
+                    )
+                };
+
                 scope.setCopyright = function(fileInfo){
 
                     function setCopyrightResult(response) {
@@ -77,7 +92,7 @@ angular.module('cnpaContestApp')
                             errorCallback(scope)
                         )
                     }
-                }
+                };
 
 
                 scope.uploadFile = function (files) {

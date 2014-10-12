@@ -31,7 +31,7 @@
         res.render('partials/' + name);
     });
 
-    var getExifMetadata = function (path, callback) {
+    function getExifMetadata(path, callback) {
 
         fs.readFile(path, function (err, data) {
             if (err)
@@ -43,7 +43,7 @@
 
     };
 
-    var xxx = function (result, nonFilenames, totalFiles, res) {
+    function xxx(result, nonFilenames, totalFiles, res) {
         return function () {
             if (result.filenames.length + nonFilenames.length >= totalFiles) {
                 res.status(200).send(result);
@@ -180,26 +180,37 @@
         form.parse(req);
     });
 
-//    app.post('/deleteFiles', function (req, res) {
-//        var rootFolder = req.body.rootFolder;
-//        var contestName = req.body.name;
-//        var filenames = req.body.filenames;
-//        var dirPath = getOriginalsPath(rootFolder, contestName);
-//        try {
-//            if (!fs.existsSync(dirPath)) {
-//                res.status(500).send(dirPath + " does not exist");
-//            } else {
-//                filenames.forEach(function (filename){
-//                    fs.unlinkSync(dirPath+filename);
-//                })
-//            }
-//            var rootFolderContent = fs.readdirSync(rootFolder);
-//            res.status(200).send(rootFolderContent);
-//
-//        } catch (exc) {
-//            res.status(500).send("could not delete files: " + dirPath + ": " + filenames + ": " + exc.message);
-//        }
-//    });
+    app.post('/deleteFile', function (req, res) {
+        var rootFolder = req.body.rootFolder;
+        var contestName = req.body.contestName;
+        var filename = req.body.filename;
+        var directory = req.body.directory;
+        var dirOriginalPath = getOriginalsPath(rootFolder, contestName);
+        var dirTestdataPath = getTestdataPath(rootFolder, contestName);
+        try {
+            var error = false;
+            if (!fs.existsSync(dirOriginalPath)) {
+                res.status(500).send(dirOriginalPath + " does not exist");
+                error=true;
+            } else {
+                fs.unlinkSync(dirOriginalPath+filename);
+            }
+            if (!fs.existsSync(dirTestdataPath)) {
+                res.status(500).send(dirTestdataPath + " does not exist");
+                error=true;
+            } else {
+                fs.unlinkSync(dirTestdataPath+filename);
+            }
+            if (! error) {
+                var dirPath = directory === Originals ? dirOriginalPath : dirTestdataPath;
+                var contestContent = fs.readdirSync(dirPath);
+                getAndReturnFileInfo(contestContent, dirPath, res, directory)
+            }
+
+        } catch (exc) {
+            res.status(500).send("could not delete file: " + dirOriginalPath + ": " + filename + ": " + exc.message);
+        }
+    });
 
     app.post('/getContests', function (req, res) {
         var rootFolder = req.body.rootFolder;
@@ -208,6 +219,10 @@
                 fs.mkdir(rootFolder);
             }
             var rootFolderContent = fs.readdirSync(rootFolder);
+            var index = rootFolderContent.indexOf('.DS_Store');
+            if (index > -1){
+                rootFolderContent.splice(index, 1);
+            }
             res.status(200).send(rootFolderContent);
 
         } catch (exc) {
@@ -255,17 +270,26 @@
                 dirPath = dirPath + "Originals/";
                 if (fs.existsSync(dirPath)){
                     contestContent = fs.readdirSync(dirPath);
+                    var index = contestContent.indexOf('.DS_Store');
+                    if (index > -1){
+                        contestContent.splice(index, 1);
+                    }
                 } else{
                     fs.mkdirSync(dirPath);
                     contestContent = [];
                 }
             } else {
                 fs.mkdirSync(dirPath);
-                fs.mkdirSync(dirPath +  + "/' + Originals + '/");
-                fs.mkdirSync(dirPath +  + "/' + Testdata + '/");
+                fs.mkdirSync(getOriginalsPath(rootFolder,contestName));
+                fs.mkdirSync(getTestdataPath(rootFolder,contestName));
                 contestContent = [];
             }
-            res.status(200).send(contestContent);
+            var result = {
+                filenames: contestContent,
+                directories: [Originals, Testdata],
+                directory : Testdata
+            };
+            res.status(200).send(result);
 
         } catch (exc) {
             res.status(500).send("could not find path: " + dirPath + ": " + exc.message);

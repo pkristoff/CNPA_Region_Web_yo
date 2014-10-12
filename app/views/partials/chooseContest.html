@@ -1,28 +1,39 @@
-<h2>Choose Contest</h2>
 
-<div>
-    <label for="selectContest-id" > Choose existing contest</label>
-    <span>
-        <select id="selectContest-id" ng-model="contest.name" name="contest" ng-options="contest.name as contest.name for contest in contest.contests"></select>
-    </span>
-    <button type="button" id="selectContestBtn-id" data-loading-text="Getting..." class="btn btn-primary"
-            ng-click="selectContest(this)">
-        Select contest
-    </button>
-</div>
-<div>
-    <label for="createContest-id" > Create new contest</label>
-    <span>
-        <input id="createContest-id" type="text" ng-model="contest.name" name="name"/>
-    </span>
-    <button type="button" id="createContestBtn-id" data-loading-text="Getting..." class="btn btn-primary"
-            ng-click="createContest()">
-        Create contest
-    </button>
-</div>
-
-<div ng-if="contest.errorMessages" class="text-error error-msg">
-    <div ng-repeat = "errorMessage in contest.errorMessages">
-        {{errorMessage}}
+<section>
+    <header>
+        Choose either from the list of already existing contests or create a new one. If the new contest does not exist it will create.
+    </header>
+    <div ng-if="contest.contests.length > 0">
+        <label for="selectContest-id"> Choose existing contest</label>
+        <span>
+            <select id="selectContest-id" ng-model="contest.name" name="contest"
+                    ng-options="contest.name as contest.name for contest in contest.contests"></select>
+        </span>
+        <button type="button" id="selectContestBtn-id" data-loading-text="Getting..." class="btn btn-primary"
+                ng-click="selectContest(this)">
+            Select contest
+        </button>
     </div>
-</div>
+    <div>
+        <label for="createContest-id"> Create new contest</label>
+        <span>
+            <input id="createContest-id" type="text" ng-model="contest.name" name="name" value="Type in contest name <no spaces>"
+                    ng-keypress="updateInput(this)"/>
+        </span>
+        <button type="button" id="createContestBtn-id" data-loading-text="Getting..." class="btn btn-primary"
+                ng-disabled="contest.name.length <= 0" ng-click="createContest()">
+            Create contest
+        </button>
+    </div>
+
+
+    <footer>
+        <div ng-if="contest.errorMessages" class="text-error error-msg">
+            <div ng-repeat="errorMessage in contest.errorMessages">
+                {{errorMessage}}
+            </div>
+        </div>
+        Filename = chooseContest.html
+        <div>ScopeName={{scopeName}} errorMessages={{contest.errorMessages}} contest={{contest}}</div>
+    </footer>
+</section>

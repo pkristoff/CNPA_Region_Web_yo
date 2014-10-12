@@ -7,12 +7,13 @@
     <table class="table" >
         <thead>
         <tr>
-            <th>Update</th><th>File</th><th>Name</th><th>Tltle</th><th>Width</th><th>Height</th><th>Copyright</th><th>Created</th><th>size(k)</th>
+            <th ng-if="directory !== 'Originals'"></th><th ng-if="directory !== 'Originals'"></th><th>File</th><th>Name</th><th>Tltle</th><th>Width</th><th>Height</th><th>Copyright</th><th>Created</th><th>size(k)</th>
         </tr>
         </thead>
         <tbody>
         <tr ng-repeat="file in images">
-            <td><button ng-click="setCopyright(file)">©</button></td>
+            <td ng-if="directory !== 'Originals'"><button title="generate a copyright" ng-click="setCopyright(file)">©</button></td>
+            <td ng-if="directory !== 'Originals'"><button title="delete file" ng-click="deleteFile(file)">D</button></td>
             <td title="{{file.filename.title}}">{{file.filename.value}}</td>
             <td class="{{file.contestantName.valid ? '' : 'alert alert-danger'}}" title="{{file.contestantName.title}}">{{file.contestantName.value}}</td>
             <td class="{{file.title.valid ? '' : 'alert alert-danger'}}" title="{{file.title.title}}">{{file.title.value}}</td>
